@@ -1198,9 +1198,6 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 	fx = extent / width;
 	fy = -(extent / height);
 
-	/* Remove all non-essential points (under the output resolution) */
-	lwgeom_remove_repeated_points_in_place(lwgeom, res);
-	lwgeom_simplify_in_place(lwgeom, res, preserve_collapsed);
 
 	/* If geometry has disappeared, you're done */
 	if (lwgeom_is_empty(lwgeom))
