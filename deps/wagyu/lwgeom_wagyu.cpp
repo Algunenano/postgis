@@ -227,9 +227,7 @@ __lwgeom_wagyu_clip_by_box(const LWGEOM *geom, const GBOX *bbox)
 
 	if (lwgeom_is_empty(geom))
 	{
-		LWGEOM *out = lwgeom_construct_empty(MULTIPOLYGONTYPE, geom->srid, 0, 0);
-		out->flags = geom->flags;
-		return out;
+		return NULL;
 	}
 
 	wagyu_point box_min(std::min(bbox->xmin, bbox->xmax), std::min(bbox->ymin, bbox->ymax));
@@ -240,9 +238,7 @@ __lwgeom_wagyu_clip_by_box(const LWGEOM *geom, const GBOX *bbox)
 	vwpolygon vpsubject = lwgeom_to_vwgpoly(geom, box);
 	if (vpsubject.size() == 0)
 	{
-		LWGEOM *out = lwgeom_construct_empty(MULTIPOLYGONTYPE, geom->srid, 0, 0);
-		out->flags = geom->flags;
-		return out;
+		return NULL;
 	}
 
 	wagyu::wagyu<wagyu_coord_type> clipper;
