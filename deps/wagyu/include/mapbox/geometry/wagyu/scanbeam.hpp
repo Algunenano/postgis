@@ -35,8 +35,8 @@ template <typename T>
 void setup_scanbeam(local_minimum_list<T>& minima_list, scanbeam_list<T>& scanbeam) {
 
     scanbeam.reserve(minima_list.size());
-    for (auto lm = minima_list.begin(); lm != minima_list.end(); ++lm) {
-        scanbeam.push_back(lm->y);
+    for (auto &lm : minima_list) {
+        scanbeam.push_back(lm.y);
     }
     std::sort(scanbeam.begin(), scanbeam.end());
 }
