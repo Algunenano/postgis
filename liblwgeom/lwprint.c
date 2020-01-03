@@ -445,7 +445,7 @@ char* lwpoint_to_latlon(const LWPOINT * pt, const char *format)
  * Returns the decimal length of a double. 0 for special cases (inf)
  */
 static inline uint32_t
-decimalLength(const double d)
+lwdecimal_length(const double d)
 {
 	assert(d >= 0.0);
 	if (d > OUT_MAX_DOUBLE)
@@ -454,25 +454,26 @@ decimalLength(const double d)
 			return 0;
 		return floor(log10(d)) + 1;
 	}
-	uint64_t v = (uint64_t) d;
-	if (v >= 100000000000000L) { return 15; }
-	if (v >= 10000000000000L) { return 14; }
-	if (v >= 1000000000000L) { return 13; }
-	if (v >= 100000000000L) { return 12; }
-	if (v >= 10000000000L) { return 11; }
-	if (v >= 1000000000L) { return 10; }
-	if (v >= 100000000L) { return 9; }
-	if (v >= 10000000L) { return 8; }
-	if (v >= 1000000L) { return 7; }
-	if (v >= 100000L) { return 6; }
-	if (v >= 10000L) { return 5; }
-	if (v >= 1000L) { return 4; }
-	if (v >= 100L) { return 3; }
-	if (v >= 10L) { return 2; }
-	if (v >= 1L) { return 1; }
+	int64_t v = (int64_t) d;
 	/* For compatibility with the previous implementation, we assume 0 has 0 digits,
 	 * although that's clearly not the case */
-	return 0;
+	if (v == 0) { return 0; }
+	if (v < 10) { return 1; }
+	if (v < 100) { return 2; }
+	if (v < 1000) { return 3; }
+	if (v < 10000) { return 4; }
+	if (v < 100000) { return 5; }
+	if (v < 1000000) { return 6; }
+	if (v < 10000000) { return 7; }
+	if (v < 100000000) { return 8; }
+	if (v < 1000000000) { return 9; }
+	if (v < 10000000000) { return 10; }
+	if (v < 100000000000) { return 11; }
+	if (v < 1000000000000) { return 12; }
+	if (v < 10000000000000) { return 13; }
+	if (v < 100000000000000) { return 14; }
+
+	return 15;
 }
 
 /*
@@ -504,7 +505,7 @@ lwprint_double(double d, uint32_t maxdd, char* buf, size_t bufsize)
 	{
 		/* Compat with previous releases: The precision for exponential notation
 		 * was, as far as I can see, 8 - length(exponent) */
-		const uint32_t fractional_digits = 8 - decimalLength(decimalLength(ad));
+		const uint32_t fractional_digits = 8 - lwdecimal_length(lwdecimal_length(ad));
 
 		length = d2exp_buffered_n(d, fractional_digits, buf);
 	}
@@ -512,8 +513,8 @@ lwprint_double(double d, uint32_t maxdd, char* buf, size_t bufsize)
 	{
 		/* We always need to save 1 last characters to add NULL */
 		const uint32_t max_chars = FP_MIN(OUT_DOUBLE_BUFFER_SIZE, bufsize) - 1;
-		const uint32_t integer_digits = decimalLength(ad);
-		/* Although we could use this extra digit for show an extra decimal in positive
+		const uint32_t integer_digits = lwdecimal_length(ad);
+		/* Although we could use this extra digit to show an extra decimal in positive
 		 * numbers, we don't use it and save it instead */
 		static const uint32_t sign_digits = 1;
 		const uint32_t fractional_digits =
