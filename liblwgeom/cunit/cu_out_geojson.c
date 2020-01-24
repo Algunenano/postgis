@@ -20,15 +20,15 @@
 static void do_geojson_test(char * in, char * out, char * srs, int precision, int has_bbox)
 {
 	LWGEOM *g;
-	char * h;
+	lwvarlena_t *h;
 
 	g = lwgeom_from_wkt(in, LW_PARSER_CHECK_NONE);
 	h = lwgeom_to_geojson(g, srs, precision, has_bbox);
 
-	if (strcmp(h, out))
-		fprintf(stderr, "\nIn:   %s\nOut:  %s\nTheo: %s\n", in, h, out);
+	if (strcmp(h->data, out))
+		fprintf(stderr, "\nIn:   %s\nOut:  %s\nTheo: %s\n", in, h->data, out);
 
-	CU_ASSERT_STRING_EQUAL(h, out);
+	CU_ASSERT_STRING_EQUAL(h->data, out);
 
 	lwgeom_free(g);
 	lwfree(h);
@@ -38,7 +38,7 @@ static void do_geojson_test(char * in, char * out, char * srs, int precision, in
 static void do_geojson_unsupported(char * in, char * out)
 {
 	LWGEOM *g;
-	char *h;
+	lwvarlena_t *h;
 
 	g = lwgeom_from_wkt(in, LW_PARSER_CHECK_NONE);
 	h = lwgeom_to_geojson(g, NULL, 0, 0);
