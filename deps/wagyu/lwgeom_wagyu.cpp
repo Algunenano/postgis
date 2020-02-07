@@ -58,6 +58,11 @@ ptarray_to_wglinearring(const POINTARRAY *pa, const wagyu_box &tile)
 	{
 		const POINT2D *p2d = getPoint2d_cp(pa, i);
 		wagyu_point wp(static_cast<wagyu_coord_type>(p2d->x), static_cast<wagyu_coord_type>(p2d->y));
+		if (!lr.empty() && wp.x == lr.back().x && wp.y == lr.back().y)
+		{
+			continue;
+		}
+
 		if (wp.x < min_x)
 		{
 			min_x = wp.x;
@@ -77,6 +82,11 @@ ptarray_to_wglinearring(const POINTARRAY *pa, const wagyu_box &tile)
 		}
 
 		lr.push_back(std::move(wp));
+	}
+
+	if (lr.size() < 4)
+	{
+		return wagyu_linearring();
 	}
 
 	/* Check how many sides of the calculated box are inside the tile */
@@ -107,7 +117,27 @@ static vwpolygon
 lwpoly_to_vwgpoly(const LWPOLY *geom, const wagyu_box &box)
 {
 	vwpolygon vp;
-	for (std::uint32_t i = 0; i < geom->nrings; i++)
+	std::uint32_t i = 0;
+	if (geom->nrings)
+	{
+		wagyu_polygon pol;
+		wagyu_linearring lr = ptarray_to_wglinearring(geom->rings[i], box);
+		i++;
+		if (lr.size() < 4)
+		{
+			return vp;
+		}
+
+		pol.push_back(std::move(lr));
+		if (i != geom->nrings)
+		{
+			pol.push_back(ptarray_to_wglinearring(geom->rings[i], box));
+			i++;
+		}
+		vp.push_back(std::move(pol));
+	}
+
+	for (; i < geom->nrings; i++)
 	{
 		wagyu_polygon pol;
 		pol.push_back(ptarray_to_wglinearring(geom->rings[i], box));
@@ -119,7 +149,7 @@ lwpoly_to_vwgpoly(const LWPOLY *geom, const wagyu_box &box)
 			pol.push_back(ptarray_to_wglinearring(geom->rings[i], box));
 		}
 
-		vp.push_back(pol);
+		vp.push_back(std::move(pol));
 	}
 
 	return vp;
