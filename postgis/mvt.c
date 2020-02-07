@@ -1177,7 +1177,7 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 	bool clip_geom)
 {
 	AFFINE affine = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-	gridspec grid = {0, 0, 0, 0, 1, 1, 0, 0};
+	gridspec int_grid = {0, 0, 0, 0, 1, 1, 0, 0};
 	double width = gbox->xmax - gbox->xmin;
 	double height = gbox->ymax - gbox->ymin;
 	double resx, resy, res, fx, fy;
@@ -1198,9 +1198,9 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 	fx = extent / width;
 	fy = -(extent / height);
 
-	/* Remove all non-essential points (under the output resolution) */
-	lwgeom_remove_repeated_points_in_place(lwgeom, res);
-	lwgeom_simplify_in_place(lwgeom, res, preserve_collapsed);
+	/* Snap to tile precision, removing duplicate points */
+	gridspec tile_grid = {gbox->xmin, gbox->ymin, 0, 0, res, res, 0, 0};
+	lwgeom_grid_in_place(lwgeom, &tile_grid);
 
 	/* If geometry has disappeared, you're done */
 	if (lwgeom_is_empty(lwgeom))
@@ -1215,7 +1215,9 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 	lwgeom_affine(lwgeom, &affine);
 
 	/* Snap to integer precision, removing duplicate points */
-	lwgeom_grid_in_place(lwgeom, &grid);
+	lwgeom_grid_in_place(lwgeom, &int_grid);
+	lwgeom_remove_repeated_points_in_place(lwgeom, 0);
+	lwgeom_simplify_in_place(lwgeom, 0, preserve_collapsed);
 
 	if (!lwgeom || lwgeom_is_empty(lwgeom))
 		return NULL;
