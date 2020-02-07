@@ -147,15 +147,19 @@ bool find_intersect_loop(std::unordered_multimap<ring_ptr<T>, point_ptr_pair<T>>
 template <typename T>
 struct point_ptr_cmp {
     inline bool operator()(point_ptr<T> op1, point_ptr<T> op2) {
-        if (op1->y != op2->y) {
-            return (op1->y > op2->y);
-        } else if (op1->x != op2->x) {
-            return (op1->x < op2->x);
-        } else {
-            std::size_t depth_1 = ring_depth(op1->ring);
-            std::size_t depth_2 = ring_depth(op2->ring);
-            return depth_1 > depth_2;
-        }
+		if (op1->ring == op2->ring)
+		{
+			if (op1->y != op2->y) {
+				return (op1->y > op2->y);
+			} else if (op1->x != op2->x) {
+				return (op1->x < op2->x);
+			} else {
+				std::size_t depth_1 = ring_depth(op1->ring);
+				std::size_t depth_2 = ring_depth(op2->ring);
+				return depth_1 > depth_2;
+			}
+		}
+		return op1->ring > op2->ring;
     }
 };
 
