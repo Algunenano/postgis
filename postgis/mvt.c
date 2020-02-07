@@ -1177,6 +1177,7 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 	bool clip_geom)
 {
 	AFFINE affine = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	gridspec int_grid = {0, 0, 0, 0, 1, 1, 0, 0};
 	double width = gbox->xmax - gbox->xmin;
 	double height = gbox->ymax - gbox->ymin;
 	double resx, resy, res, fx, fy;
@@ -1214,7 +1215,8 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 	lwgeom_affine(lwgeom, &affine);
 
 	/* Snap to integer precision, removing duplicate points */
-	lwgeom_remove_repeated_points_in_place(lwgeom, 0);
+	lwgeom_grid_in_place(lwgeom, &int_grid);
+	lwgeom_remove_repeated_points_in_place(lwgeom, FLT_EPSILON);
 	lwgeom_simplify_in_place(lwgeom, 0, preserve_collapsed);
 
 	if (!lwgeom || lwgeom_is_empty(lwgeom))
