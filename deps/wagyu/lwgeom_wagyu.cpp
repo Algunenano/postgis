@@ -49,44 +49,48 @@ ptarray_to_wglinearring(const POINTARRAY *pa, const wagyu_box &tile)
 	lr.reserve(pa->npoints);
 
 	const POINT2D *p2d = getPoint2d_cp(pa, 0);
-	wagyu_point wp1(static_cast<wagyu_coord_type>(p2d->x), static_cast<wagyu_coord_type>(p2d->y));
+	wagyu_coord_type x = static_cast<wagyu_coord_type>(p2d->x);
+	wagyu_coord_type y = static_cast<wagyu_coord_type>(p2d->y);
 
 	/* We calculate the bounding box of the point array */
-	wagyu_coord_type min_x = wp1.x;
-	wagyu_coord_type max_x = wp1.x;
-	wagyu_coord_type min_y = wp1.y;
-	wagyu_coord_type max_y = wp1.y;
+	wagyu_coord_type min_x = x;
+	wagyu_coord_type max_x = x;
+	wagyu_coord_type min_y = y;
+	wagyu_coord_type max_y = y;
 
-	lr.push_back(std::move(wp1));
+	lr.emplace_back(x, y);
 
 	for (std::uint32_t i = 1; i < pa->npoints; i++)
 	{
-		const POINT2D *p2d = getPoint2d_cp(pa, i);
-		wagyu_point wp(static_cast<wagyu_coord_type>(p2d->x), static_cast<wagyu_coord_type>(p2d->y));
-		if (wp.x == lr.back().x && wp.y == lr.back().y)
+		p2d = getPoint2d_cp(pa, i);
+		wagyu_coord_type newx = static_cast<wagyu_coord_type>(p2d->x);
+		wagyu_coord_type newy = static_cast<wagyu_coord_type>(p2d->y);
+		if (newx == x && newy == y)
 		{
 			continue;
 		}
 
-		if (wp.x < min_x)
+		if (newx < min_x)
 		{
-			min_x = wp.x;
+			min_x = newx;
 		}
-		else if (wp.x > max_x)
+		else if (newx > max_x)
 		{
-			max_x = wp.x;
-		}
-
-		if (wp.y < min_y)
-		{
-			min_y = wp.y;
-		}
-		else if (wp.y > max_y)
-		{
-			max_y = wp.y;
+			max_x = newx;
 		}
 
-		lr.push_back(std::move(wp));
+		if (newy < min_y)
+		{
+			min_y = newy;
+		}
+		else if (newy > max_y)
+		{
+			max_y = newy;
+		}
+
+		lr.emplace_back(newx, newy);
+		x = newx;
+		y = newy;
 	}
 
 	if (lr.size() < 4)

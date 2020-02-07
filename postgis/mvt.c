@@ -1026,6 +1026,8 @@ mvt_grid_and_validate_geos(LWGEOM *ng, uint8_t basic_type)
 	{
 		/* Make sure there is no pending float values (clipping can do that) */
 		lwgeom_grid_in_place(ng, &grid);
+		lwgeom_remove_repeated_points_in_place(ng, FLT_EPSILON);
+		ng = lwgeom_to_basic_type(ng, basic_type);
 	}
 	else
 	{
@@ -1216,7 +1218,6 @@ LWGEOM *mvt_geom(LWGEOM *lwgeom, const GBOX *gbox, uint32_t extent, uint32_t buf
 
 	/* Snap to integer precision, removing duplicate points */
 	lwgeom_grid_in_place(lwgeom, &int_grid);
-	lwgeom_remove_repeated_points_in_place(lwgeom, FLT_EPSILON);
 	lwgeom_simplify_in_place(lwgeom, 0, preserve_collapsed);
 
 	if (!lwgeom || lwgeom_is_empty(lwgeom))
