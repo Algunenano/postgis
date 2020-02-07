@@ -160,7 +160,7 @@ struct ring_manager {
     point_vector<T> all_points;
     hot_pixel_vector<T> hot_pixels;
     hot_pixel_itr<T> current_hp_itr;
-    std::deque<point<T>> points;
+    std::vector<point<T>> points;
     std::deque<ring<T>> rings;
     std::vector<point<T>> storage;
     std::size_t index;
