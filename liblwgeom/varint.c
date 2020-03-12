@@ -33,42 +33,28 @@
 static size_t
 _varint_u64_encode_buf(uint64_t val, uint8_t *buf)
 {
-	uint8_t grp;
 	uint64_t q = val;
 	uint8_t *ptr = buf;
-	while (1)
-	{
+    uint8_t cont = 0;
+
+    do
+    {
 		/* We put the 7 least significant bits in grp */
-		grp = 0x7f & q;
+		uint8_t grp = 0x7f & q;
+
 		/* We rightshift our input value 7 bits */
 		/* which means that the 7 next least significant bits */
 		/* becomes the 7 least significant */
 		q = q >> 7;
-		/* Check if, after our rightshifting, we still have */
-		/* anything to read in our input value. */
-		if ( q > 0 )
-		{
-			/* In the next line quite a lot is happening. */
-			/* Since there is more to read in our input value */
-			/* we signal that by setting the most significant bit */
-			/* in our byte to 1. */
-			/* Then we put that byte in our buffer and move the pointer */
-			/* forward one step */
-			*ptr = 0x80 | grp;
-			ptr++;
-		}
-		else
-		{
-			/* The same as above, but since there is nothing more */
-			/* to read in our input value we leave the most significant bit unset */
-			*ptr = grp;
-			ptr++;
-			return ptr - buf;
-		}
-	}
-	/* This cannot happen */
-	lwerror("%s: Got out of infinite loop. Consciousness achieved.", __func__);
-	return (size_t)0;
+
+		/* If there are more bits to read after this, we mark to most significant byte to 1 */
+        cont = (q ? 0x80 : 0);
+
+        *ptr = grp | cont;
+        ptr++;
+    } while (cont);
+
+    return ptr - buf;
 }
 
 
