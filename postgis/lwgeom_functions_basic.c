@@ -2694,8 +2694,7 @@ Datum ST_GeoHash(PG_FUNCTION_ARGS)
 
 	GSERIALIZED *geom = NULL;
 	int precision = 0;
-	char *geohash = NULL;
-	text *result = NULL;
+	lwvarlena_t *geohash = NULL;
 
 	if (PG_ARGISNULL(0))
 	{
@@ -2710,14 +2709,9 @@ Datum ST_GeoHash(PG_FUNCTION_ARGS)
 	}
 
 	geohash = lwgeom_geohash((LWGEOM *)(lwgeom_from_gserialized(geom)), precision);
-
-	if (!geohash)
-		PG_RETURN_NULL();
-
-	result = cstring_to_text(geohash);
-	pfree(geohash);
-
-	PG_RETURN_TEXT_P(result);
+	if (geohash)
+		PG_RETURN_TEXT_P(geohash);
+	PG_RETURN_NULL();
 }
 
 PG_FUNCTION_INFO_V1(ST_CollectionExtract);
