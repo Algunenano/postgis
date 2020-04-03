@@ -20,37 +20,48 @@
 static void do_kml_test(char * in, char * out, int precision)
 {
 	LWGEOM *g;
-	char * h;
+	lwvarlena_t *v;
 
 	g = lwgeom_from_wkt(in, LW_PARSER_CHECK_NONE);
-	h = lwgeom_to_kml2(g, precision, "");
+	v = lwgeom_to_kml2(g, precision, "");
 
-	if (strcmp(h, out))
-		fprintf(stderr, "\nIn:   %s\nOut:  %s\nTheo: %s\n", in, h, out);
-
-	CU_ASSERT_STRING_EQUAL(h, out);
+	if (strncmp(v->data, out, strlen(out)))
+	{
+		fprintf(stderr, "\nIn:   %s\nOut:  %s\nTheo: %s\n", in, v->data, out);
+		CU_FAIL();
+	}
+	else
+	{
+		CU_PASS();
+	}
 
 	lwgeom_free(g);
-	lwfree(h);
+	lwfree(v);
 }
 
 
 static void do_kml_unsupported(char * in, char * out)
 {
 	LWGEOM *g;
-	char *h;
+	lwvarlena_t *v;
 
 	g = lwgeom_from_wkt(in, LW_PARSER_CHECK_NONE);
-	h = lwgeom_to_kml2(g, 0, "");
+	v = lwgeom_to_kml2(g, 0, "");
 
-	if (strcmp(cu_error_msg, out))
+	if (strncmp(cu_error_msg, out, strlen(out)))
+	{
 		fprintf(stderr, "\nIn:   %s\nOut:  %s\nTheo: %s\n",
 		        in, cu_error_msg, out);
+		CU_FAIL();
+	}
+	else
+	{
+		CU_PASS();
+	}
 
-	CU_ASSERT_STRING_EQUAL(out, cu_error_msg);
 	cu_error_msg_reset();
 
-	lwfree(h);
+	lwfree(v);
 	lwgeom_free(g);
 }
 
@@ -58,19 +69,23 @@ static void do_kml_unsupported(char * in, char * out)
 static void do_kml_test_prefix(char * in, char * out, int precision, const char *prefix)
 {
 	LWGEOM *g;
-	char * h;
+	lwvarlena_t *v;
 
 	g = lwgeom_from_wkt(in, LW_PARSER_CHECK_NONE);
-	h = lwgeom_to_kml2(g, precision, prefix);
+	v = lwgeom_to_kml2(g, precision, prefix);
 
-	if (strcmp(h, out))
-		fprintf(stderr, "\nPrefix: %s\nIn:   %s\nOut:  %s\nTheo: %s\n",
-		        prefix, in, h, out);
-
-	CU_ASSERT_STRING_EQUAL(h, out);
+	if (strncmp(v->data, out, strlen(out)))
+	{
+		fprintf(stderr, "\nPrefix: %s\nIn:   %s\nOut:  %s\nTheo: %s\n", prefix, in, v->data, out);
+		CU_FAIL();
+	}
+	else
+	{
+		CU_PASS();
+	}
 
 	lwgeom_free(g);
-	lwfree(h);
+	lwfree(v);
 }
 
 
