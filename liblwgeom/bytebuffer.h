@@ -52,7 +52,7 @@ void bytebuffer_append_bytebuffer(bytebuffer_t *write_to, bytebuffer_t *write_fr
 void bytebuffer_append_varint(bytebuffer_t *s, const int64_t val);
 void bytebuffer_append_uvarint(bytebuffer_t *s, const uint64_t val);
 size_t bytebuffer_getlength(const bytebuffer_t *s);
-uint8_t* bytebuffer_get_buffer_copy(const bytebuffer_t *s, size_t *buffer_length);
+lwvarlena_t *bytebuffer_get_buffer_varlena(const bytebuffer_t *s);
 const uint8_t* bytebuffer_get_buffer(const bytebuffer_t *s, size_t *buffer_length);
 
 /* Unused functions */
@@ -61,6 +61,7 @@ void bytebuffer_destroy(bytebuffer_t *s);
 bytebuffer_t *bytebuffer_create_with_size(size_t size);
 bytebuffer_t *bytebuffer_create(void);
 void bytebuffer_clear(bytebuffer_t *s);
+uint8_t* bytebuffer_get_buffer_copy(const bytebuffer_t *s, size_t *buffer_length);
 uint64_t bytebuffer_read_uvarint(bytebuffer_t *s);
 int64_t bytebuffer_read_varint(bytebuffer_t *s);
 bytebuffer_t* bytebuffer_merge(bytebuffer_t **buff_array, int nbuffers);
