@@ -26,7 +26,7 @@ CFLAGS= -I ../liblwgeom @CPPFLAGS@ @CFLAGS@ @PICFLAGS@ @PROJ_CPPFLAGS@
 top_builddir = @top_builddir@
 SHELL = @SHELL@
 INSTALL = @INSTALL@
-LIBTOOL = @LIBTOOL@
+LIBTOOL = @LIBTOOL@ -v
 
 # Filenames with extension as determined by the OS
 POSTGIS-CLI=postgis@EXESUFFIX@
