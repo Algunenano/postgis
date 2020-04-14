@@ -759,45 +759,61 @@ AC_ARG_WITH([sfcgal],
 
 
 if test "x$with_sfcgal" != "xno"; then
-  if test "x$with_sfcgal" = "xyes" -o "x$with_sfcgal" = "xauto"; then
-	  AC_PATH_PROG([SFCGAL_CONFIG], [sfcgal-config], [])
-  fi
-	if test -x "$SFCGAL_CONFIG"; then
-		SFCGAL_VERSION=`$SFCGAL_CONFIG --version` || AC_MSG_ERROR([cannot determine sfcgal version (tried with $SFCGAL_CONFIG --version)])
-		SFCGAL_LDFLAGS=`$SFCGAL_CONFIG --libs`
-		SFCGAL_CPPFLAGS=`$SFCGAL_CONFIG --cflags`
-
-		SFCGAL_MAJOR_VERSION=`echo $SFCGAL_VERSION | cut -d. -f1 | sed 's/[[^0-9]]//g'`
-		SFCGAL_MINOR_VERSION=`echo $SFCGAL_VERSION | cut -d. -f2 | sed 's/[[^0-9]]//g'`
-		SFCGAL_PATCH_VERSION=`echo $SFCGAL_VERSION | cut -d. -f3 | sed 's/[[^0-9]]//g'`
-		SFCGAL_NUMERIC_PATCH_VERSION=`printf "%02d" $SFCGAL_PATCH_VERSION`
-		SFCGAL_NUMERIC_MINOR_VERSION=`printf "%02d" $SFCGAL_MINOR_VERSION`
-		POSTGIS_SFCGAL_VERSION="$SFCGAL_MAJOR_VERSION$SFCGAL_NUMERIC_MINOR_VERSION$SFCGAL_NUMERIC_PATCH_VERSION"
-		AC_DEFINE_UNQUOTED([POSTGIS_SFCGAL_VERSION], [$POSTGIS_SFCGAL_VERSION], [SFCGAL library version at build time])
-		AC_SUBST([POSTGIS_SFCGAL_VERSION])
-
-		SFCGAL_STATIC=`$SFCGAL_CONFIG --static`
-		if test "x$SFCGAL_STATIC" = "xON"; then
-			AC_MSG_WARN([The SFCGAL version found is not installed as a dynamic library.])
-		else
-        		SFCGAL="sfcgal"
-			HAVE_SFCGAL="yes"
-                        AC_DEFINE([HAVE_SFCGAL], [1], [Define to 1 if sfcgal is being built])
-		fi
-		if test ! "$POSTGIS_SFCGAL_VERSION" -ge 10301; then
-			AC_MSG_ERROR([PostGIS requires SFCGAL >= 1.3.1 (found $SFCGAL_VERSION)])
-		fi
-	else
-		if test "x$with_sfcgal" != "xauto"; then
-			AC_MSG_ERROR([sfcgal-config cannot be found. Please install sfcgal])
-		fi
+    if test "x$with_sfcgal" = "xauto"; then
+	if test -n "$PKG_CONFIG"; then
+            PKG_CHECK_MODULES([SFCGAL], [sfcgal >= 1.3.1], [
+                SFCGAL_CPPFLAGS="$SFCGAL_CFLAGS";
+                SFCGAL_LDFLAGS="$SFCGAL_LIBS";
+                SFCGAL_VERSION=`$PKG_CONFIG sfcgal --modversion`;
+                SFCGAL_CONFIG="pkgconfig";
+                HAVE_JSON="yes";
+                SFCGAL="sfcgal";
+            ], [
+                AC_MSG_RESULT([sfcgal not found in pkg-config])
+            ])
 	fi
+    fi
+
+    if test "x$HAVE_JSON" != "xyes"; then
+        if test "x$with_sfcgal" = "xyes" -o "x$with_sfcgal" = "xauto"; then
+                AC_PATH_PROG([SFCGAL_CONFIG], [sfcgal-config], [])
+        fi
+        if test -x "$SFCGAL_CONFIG"; then
+                SFCGAL_VERSION=`$SFCGAL_CONFIG --version` || AC_MSG_ERROR([cannot determine sfcgal version (tried with $SFCGAL_CONFIG --version)])
+                SFCGAL_LDFLAGS=`$SFCGAL_CONFIG --libs`
+                SFCGAL_CPPFLAGS=`$SFCGAL_CONFIG --cflags`
+
+                SFCGAL_MAJOR_VERSION=`echo $SFCGAL_VERSION | cut -d. -f1 | sed 's/[[^0-9]]//g'`
+                SFCGAL_MINOR_VERSION=`echo $SFCGAL_VERSION | cut -d. -f2 | sed 's/[[^0-9]]//g'`
+                SFCGAL_PATCH_VERSION=`echo $SFCGAL_VERSION | cut -d. -f3 | sed 's/[[^0-9]]//g'`
+                SFCGAL_NUMERIC_PATCH_VERSION=`printf "%02d" $SFCGAL_PATCH_VERSION`
+                SFCGAL_NUMERIC_MINOR_VERSION=`printf "%02d" $SFCGAL_MINOR_VERSION`
+                POSTGIS_SFCGAL_VERSION="$SFCGAL_MAJOR_VERSION$SFCGAL_NUMERIC_MINOR_VERSION$SFCGAL_NUMERIC_PATCH_VERSION"
+                AC_DEFINE_UNQUOTED([POSTGIS_SFCGAL_VERSION], [$POSTGIS_SFCGAL_VERSION], [SFCGAL library version at build time])
+                AC_SUBST([POSTGIS_SFCGAL_VERSION])
+
+                SFCGAL_STATIC=`$SFCGAL_CONFIG --static`
+                if test "x$SFCGAL_STATIC" = "xON"; then
+                        AC_MSG_WARN([The SFCGAL version found is not installed as a dynamic library.])
+                else
+                        SFCGAL="sfcgal"
+                        HAVE_SFCGAL="yes"
+                        AC_DEFINE([HAVE_SFCGAL], [1], [Define to 1 if sfcgal is being built])
+                fi
+                if test ! "$POSTGIS_SFCGAL_VERSION" -ge 10301; then
+                        AC_MSG_ERROR([PostGIS requires SFCGAL >= 1.3.1 (found $SFCGAL_VERSION)])
+                fi
+        else
+                if test "x$with_sfcgal" != "xauto"; then
+                        AC_MSG_ERROR([sfcgal-config cannot be found. Please install sfcgal])
+                fi
+        fi
+    fi
 fi
 
 AC_SUBST([SFCGAL_VERSION])
 AC_SUBST([SFCGAL_CPPFLAGS])
 AC_SUBST([SFCGAL_LDFLAGS])
-AC_SUBST([SFCGAL_OBJS])
 AC_SUBST([SFCGAL])
 AC_SUBST([HAVE_SFCGAL])
 
