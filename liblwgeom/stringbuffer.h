@@ -95,6 +95,13 @@ stringbuffer_append_len(stringbuffer_t *s, const char *a, size_t alen)
 	s->str_end += alen;
 }
 
+inline static void
+stringbuffer_append_double(stringbuffer_t *s, double d, int precision)
+{
+	stringbuffer_makeroom(s, OUT_DOUBLE_BUFFER_SIZE);
+	s->str_end += lwprint_double(d, precision, s->str_end, OUT_DOUBLE_BUFFER_SIZE);
+}
+
 /**
  * Append the specified string to the stringbuffer_t.
  */
