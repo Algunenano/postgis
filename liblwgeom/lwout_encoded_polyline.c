@@ -121,14 +121,14 @@ pointarray_to_encoded_polyline(const POINTARRAY* pa, int precision)
 			/* Place the 5-bit chunks into reverse order or
 			 each value with 0x20 if another bit chunk follows and add 63*/
 			int nextValue = (0x20 | (numberToEncode & 0x1f)) + 63;
-			stringbuffer_aprintf(sb, "%c", (char)nextValue);
+			stringbuffer_append_char(sb, (char)nextValue);
 
 			/* Break the binary value out into 5-bit chunks */
 			numberToEncode >>= 5;
 		}
 
 		numberToEncode += 63;
-		stringbuffer_aprintf(sb, "%c", (char)numberToEncode);
+		stringbuffer_append_char(sb, (char)numberToEncode);
 	}
 
 	lwfree(delta);
