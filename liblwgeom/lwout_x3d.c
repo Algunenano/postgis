@@ -501,60 +501,59 @@ asx3d3_collection_sb(const LWCOLLECTION *col, char *srs, int precision, int opts
 static int
 ptarray_to_x3d3_sb(POINTARRAY *pa, int precision, int opts, int is_closed, stringbuffer_t *sb )
 {
-	uint32_t i;
-	char x[OUT_DOUBLE_BUFFER_SIZE];
-	char y[OUT_DOUBLE_BUFFER_SIZE];
-	char z[OUT_DOUBLE_BUFFER_SIZE];
-
 	if ( ! FLAGS_GET_Z(pa->flags) )
 	{
-		for (i=0; i<pa->npoints; i++)
+		stringbuffer_makeroom(sb, (OUT_MAX_DIGS_DOUBLE + 2) * pa->npoints * 2);
+		for (uint32_t i = 0; i < pa->npoints; i++)
 		{
 			/** Only output the point if it is not the last point of a closed object or it is a non-closed type **/
 			if ( !is_closed || i < (pa->npoints - 1) )
 			{
-				POINT2D pt;
-				getPoint2d_p(pa, i, &pt);
+				const POINT2D *pt = getPoint2d_cp(pa, i);
 
-				lwprint_double(
-				    pt.x, precision, x, OUT_DOUBLE_BUFFER_SIZE);
-				lwprint_double(
-				    pt.y, precision, y, OUT_DOUBLE_BUFFER_SIZE);
+				double first = pt->x;
+				double second = pt->y;
+				if ((opts & LW_X3D_FLIP_XY))
+				{
+					first = pt->y;
+					second = pt->x;
+				}
 
 				if (i)
-					stringbuffer_append_char(sb, ' ');
+					stringbuffer_append_char_nocheck(sb, ' ');
 
-				if ( ( opts & LW_X3D_FLIP_XY) )
-					stringbuffer_aprintf(sb, "%s %s", y, x);
-				else
-					stringbuffer_aprintf(sb, "%s %s", x, y);
+				stringbuffer_append_double_nocheck(sb, first, precision);
+				stringbuffer_append_char_nocheck(sb, ' ');
+				stringbuffer_append_double_nocheck(sb, second, precision);
 			}
 		}
 	}
 	else
 	{
-		for (i=0; i<pa->npoints; i++)
+		stringbuffer_makeroom(sb, (OUT_MAX_DIGS_DOUBLE + 2) * pa->npoints * 3);
+		for (uint32_t i = 0; i < pa->npoints; i++)
 		{
 			/** Only output the point if it is not the last point of a closed object or it is a non-closed type **/
 			if ( !is_closed || i < (pa->npoints - 1) )
 			{
-				POINT4D pt;
-				getPoint4d_p(pa, i, &pt);
+				const POINT3D *pt = getPoint3d_cp(pa, i);
 
-				lwprint_double(
-				    pt.x, precision, x, OUT_DOUBLE_BUFFER_SIZE);
-				lwprint_double(
-				    pt.y, precision, y, OUT_DOUBLE_BUFFER_SIZE);
-				lwprint_double(
-				    pt.z, precision, z, OUT_DOUBLE_BUFFER_SIZE);
+				double first = pt->x;
+				double second = pt->y;
+				if ((opts & LW_X3D_FLIP_XY))
+				{
+					first = pt->y;
+					second = pt->x;
+				}
 
 				if (i)
-					stringbuffer_append_char(sb, ' ');
+					stringbuffer_append_char_nocheck(sb, ' ');
 
-				if ( ( opts & LW_X3D_FLIP_XY) )
-					stringbuffer_aprintf(sb, "%s %s %s", y, x, z);
-				else
-					stringbuffer_aprintf(sb, "%s %s %s", x, y, z);
+				stringbuffer_append_double_nocheck(sb, first, precision);
+				stringbuffer_append_char_nocheck(sb, ' ');
+				stringbuffer_append_double_nocheck(sb, second, precision);
+				stringbuffer_append_char_nocheck(sb, ' ');
+				stringbuffer_append_double_nocheck(sb, pt->z, precision);
 			}
 		}
 	}

@@ -103,25 +103,19 @@ ptarray_to_kml2_sb(const POINTARRAY *pa, int precision, stringbuffer_t *sb)
 	POINT4D pt;
 	double *d;
 
+	stringbuffer_makeroom(sb, (OUT_MAX_DIGS_DOUBLE + 2) * pa->npoints * dims);
+
 	for ( i = 0; i < pa->npoints; i++ )
 	{
 		getPoint4d_p(pa, i, &pt);
 		d = (double*)(&pt);
 		if (i)
-			stringbuffer_append_char(sb, ' ');
+			stringbuffer_append_char_nocheck(sb, ' ');
 		for (j = 0; j < dims; j++)
 		{
 			if (j)
-				stringbuffer_append_char(sb, ',');
-			if( fabs(d[j]) < OUT_MAX_DOUBLE )
-			{
-				if ( stringbuffer_aprintf(sb, "%.*f", precision, d[j]) < 0 ) return LW_FAILURE;
-			}
-			else
-			{
-				if ( stringbuffer_aprintf(sb, "%g", d[j]) < 0 ) return LW_FAILURE;
-			}
-			stringbuffer_trim_trailing_zeroes(sb);
+				stringbuffer_append_char_nocheck(sb, ',');
+			stringbuffer_append_double_nocheck(sb, d[j], precision);
 		}
 	}
 	return LW_SUCCESS;

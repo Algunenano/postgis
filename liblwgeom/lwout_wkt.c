@@ -38,13 +38,7 @@ static void lwgeom_to_wkt_sb(const LWGEOM *geom, stringbuffer_t *sb, int precisi
 */
 static void dimension_qualifiers_to_wkt_sb(const LWGEOM *geom, stringbuffer_t *sb, uint8_t variant)
 {
-
-	/* Extended WKT: POINTM(0 0 0) */
-#if 0
-	if ( (variant & WKT_EXTENDED) && ! (variant & WKT_IS_CHILD) && FLAGS_GET_M(geom->flags) && (!FLAGS_GET_Z(geom->flags)) )
-#else
 	if ( (variant & WKT_EXTENDED) && FLAGS_GET_M(geom->flags) && (!FLAGS_GET_Z(geom->flags)) )
-#endif
 	{
 		stringbuffer_append_char(sb, 'M'); /* "M" */
 		return;
@@ -68,11 +62,16 @@ static void dimension_qualifiers_to_wkt_sb(const LWGEOM *geom, stringbuffer_t *s
 */
 static void empty_to_wkt_sb(stringbuffer_t *sb)
 {
+	stringbuffer_makeroom(sb, 6);
 	if ( ! strchr(" ,(", stringbuffer_lastchar(sb)) ) /* "EMPTY" */
 	{
-		stringbuffer_append_char(sb, ' ');
+		stringbuffer_append_char_nocheck(sb, ' ');
 	}
-	stringbuffer_append_len(sb, "EMPTY", 5);
+	stringbuffer_append_char_nocheck(sb, 'E');
+	stringbuffer_append_char_nocheck(sb, 'M');
+	stringbuffer_append_char_nocheck(sb, 'P');
+	stringbuffer_append_char_nocheck(sb, 'T');
+	stringbuffer_append_char_nocheck(sb, 'Y');
 }
 
 /*
@@ -86,13 +85,15 @@ static void ptarray_to_wkt_sb(const POINTARRAY *ptarray, stringbuffer_t *sb, int
 	uint32_t dimensions = 2;
 	uint32_t i, j;
 
+	stringbuffer_makeroom(sb, 2 /* parens */ + (OUT_MAX_DIGS_DOUBLE + 2) * ptarray->npoints * dimensions);
+
 	/* ISO and extended formats include all dimensions */
 	if ( variant & ( WKT_ISO | WKT_EXTENDED ) )
 		dimensions = FLAGS_NDIMS(ptarray->flags);
 
 	/* Opening paren? */
 	if ( ! (variant & WKT_NO_PARENS) )
-		stringbuffer_append_char(sb, '(');
+		stringbuffer_append_char_nocheck(sb, '(');
 
 	/* Digits and commas */
 	for (i = 0; i < ptarray->npoints; i++)
@@ -101,20 +102,20 @@ static void ptarray_to_wkt_sb(const POINTARRAY *ptarray, stringbuffer_t *sb, int
 
 		/* Commas before ever coord but the first */
 		if ( i > 0 )
-			stringbuffer_append_char(sb, ',');
+			stringbuffer_append_char_nocheck(sb, ',');
 
 		for (j = 0; j < dimensions; j++)
 		{
 			/* Spaces before every ordinate but the first */
 			if ( j > 0 )
-				stringbuffer_append_char(sb, ' ');
-			stringbuffer_append_double(sb, dbl_ptr[j], precision);
+				stringbuffer_append_char_nocheck(sb, ' ');
+			stringbuffer_append_double_nocheck(sb, dbl_ptr[j], precision);
 		}
 	}
 
 	/* Closing paren? */
 	if ( ! (variant & WKT_NO_PARENS) )
-		stringbuffer_append_char(sb, ')');
+		stringbuffer_append_char_nocheck(sb, ')');
 }
 
 /*

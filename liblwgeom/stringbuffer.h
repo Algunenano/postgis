@@ -57,8 +57,6 @@ extern const char *stringbuffer_getstring(stringbuffer_t *sb);
 extern char *stringbuffer_getstringcopy(stringbuffer_t *sb);
 extern int stringbuffer_getlength(stringbuffer_t *sb);
 extern char stringbuffer_lastchar(stringbuffer_t *s);
-extern int stringbuffer_trim_trailing_white(stringbuffer_t *s);
-extern int stringbuffer_trim_trailing_zeroes(stringbuffer_t *s);
 
 /**
  * If necessary, expand the stringbuffer_t internal buffer to accommodate the
@@ -96,18 +94,23 @@ stringbuffer_append_len(stringbuffer_t *s, const char *a, size_t alen)
 }
 
 inline static void
-stringbuffer_append_double(stringbuffer_t *s, double d, int precision)
+stringbuffer_append_double_nocheck(stringbuffer_t *s, double d, int precision)
 {
-	stringbuffer_makeroom(s, OUT_DOUBLE_BUFFER_SIZE);
 	s->str_end += lwprint_double(d, precision, s->str_end, OUT_DOUBLE_BUFFER_SIZE);
+}
+
+inline static void
+stringbuffer_append_char_nocheck(stringbuffer_t *s, char c)
+{
+	*s->str_end = c;
+	s->str_end++;
 }
 
 inline static void
 stringbuffer_append_char(stringbuffer_t *s, char c)
 {
 	stringbuffer_makeroom(s, 1);
-	*s->str_end = c;
-	s->str_end++;
+	stringbuffer_append_char_nocheck(s, c);
 }
 
 /**
