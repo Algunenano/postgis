@@ -46,19 +46,19 @@ static void dimension_qualifiers_to_wkt_sb(const LWGEOM *geom, stringbuffer_t *s
 	if ( (variant & WKT_EXTENDED) && FLAGS_GET_M(geom->flags) && (!FLAGS_GET_Z(geom->flags)) )
 #endif
 	{
-		stringbuffer_append_len(sb, "M", 1); /* "M" */
+		stringbuffer_append_char(sb, 'M'); /* "M" */
 		return;
 	}
 
 	/* ISO WKT: POINT ZM (0 0 0 0) */
 	if ( (variant & WKT_ISO) && (FLAGS_NDIMS(geom->flags) > 2) )
 	{
-		stringbuffer_append_len(sb, " ", 1);
+		stringbuffer_append_char(sb, ' ');
 		if ( FLAGS_GET_Z(geom->flags) )
-			stringbuffer_append_len(sb, "Z", 1);
+			stringbuffer_append_char(sb, 'Z');
 		if ( FLAGS_GET_M(geom->flags) )
-			stringbuffer_append_len(sb, "M", 1);
-		stringbuffer_append_len(sb, " ", 1);
+			stringbuffer_append_char(sb, 'M');
+		stringbuffer_append_char(sb, ' ');
 	}
 }
 
@@ -70,7 +70,7 @@ static void empty_to_wkt_sb(stringbuffer_t *sb)
 {
 	if ( ! strchr(" ,(", stringbuffer_lastchar(sb)) ) /* "EMPTY" */
 	{
-		stringbuffer_append_len(sb, " ", 1);
+		stringbuffer_append_char(sb, ' ');
 	}
 	stringbuffer_append_len(sb, "EMPTY", 5);
 }
@@ -92,7 +92,7 @@ static void ptarray_to_wkt_sb(const POINTARRAY *ptarray, stringbuffer_t *sb, int
 
 	/* Opening paren? */
 	if ( ! (variant & WKT_NO_PARENS) )
-		stringbuffer_append_len(sb, "(", 1);
+		stringbuffer_append_char(sb, '(');
 
 	/* Digits and commas */
 	for (i = 0; i < ptarray->npoints; i++)
@@ -101,20 +101,20 @@ static void ptarray_to_wkt_sb(const POINTARRAY *ptarray, stringbuffer_t *sb, int
 
 		/* Commas before ever coord but the first */
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 
 		for (j = 0; j < dimensions; j++)
 		{
 			/* Spaces before every ordinate but the first */
 			if ( j > 0 )
-				stringbuffer_append_len(sb, " ", 1);
+				stringbuffer_append_char(sb, ' ');
 			stringbuffer_append_double(sb, dbl_ptr[j], precision);
 		}
 	}
 
 	/* Closing paren? */
 	if ( ! (variant & WKT_NO_PARENS) )
-		stringbuffer_append_len(sb, ")", 1);
+		stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -180,14 +180,14 @@ static void lwpoly_to_wkt_sb(const LWPOLY *poly, stringbuffer_t *sb, int precisi
 		return;
 	}
 
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	for ( i = 0; i < poly->nrings; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		ptarray_to_wkt_sb(poly->rings[i], sb, precision, variant);
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -226,16 +226,16 @@ static void lwmpoint_to_wkt_sb(const LWMPOINT *mpoint, stringbuffer_t *sb, int p
 		empty_to_wkt_sb(sb);
 		return;
 	}
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < mpoint->ngeoms; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		/* We don't want type strings or parens on our subgeoms */
 		lwpoint_to_wkt_sb(mpoint->geoms[i], sb, precision, variant | WKT_NO_PARENS | WKT_NO_TYPE );
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -256,16 +256,16 @@ static void lwmline_to_wkt_sb(const LWMLINE *mline, stringbuffer_t *sb, int prec
 		return;
 	}
 
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < mline->ngeoms; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		/* We don't want type strings on our subgeoms */
 		lwline_to_wkt_sb(mline->geoms[i], sb, precision, variant | WKT_NO_TYPE );
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -286,16 +286,16 @@ static void lwmpoly_to_wkt_sb(const LWMPOLY *mpoly, stringbuffer_t *sb, int prec
 		return;
 	}
 
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < mpoly->ngeoms; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		/* We don't want type strings on our subgeoms */
 		lwpoly_to_wkt_sb(mpoly->geoms[i], sb, precision, variant | WKT_NO_TYPE );
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -318,13 +318,13 @@ static void lwcompound_to_wkt_sb(const LWCOMPOUND *comp, stringbuffer_t *sb, int
 		return;
 	}
 
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < comp->ngeoms; i++ )
 	{
 		int type = comp->geoms[i]->type;
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		/* Linestring subgeoms don't get type identifiers */
 		if ( type == LINETYPE )
 		{
@@ -340,7 +340,7 @@ static void lwcompound_to_wkt_sb(const LWCOMPOUND *comp, stringbuffer_t *sb, int
 			lwerror("lwcompound_to_wkt_sb: Unknown type received %d - %s", type, lwtype_name(type));
 		}
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -362,13 +362,13 @@ static void lwcurvepoly_to_wkt_sb(const LWCURVEPOLY *cpoly, stringbuffer_t *sb, 
 		empty_to_wkt_sb(sb);
 		return;
 	}
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < cpoly->nrings; i++ )
 	{
 		int type = cpoly->rings[i]->type;
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		switch (type)
 		{
 		case LINETYPE:
@@ -387,7 +387,7 @@ static void lwcurvepoly_to_wkt_sb(const LWCURVEPOLY *cpoly, stringbuffer_t *sb, 
 			lwerror("lwcurvepoly_to_wkt_sb: Unknown type received %d - %s", type, lwtype_name(type));
 		}
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 
@@ -410,13 +410,13 @@ static void lwmcurve_to_wkt_sb(const LWMCURVE *mcurv, stringbuffer_t *sb, int pr
 		empty_to_wkt_sb(sb);
 		return;
 	}
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < mcurv->ngeoms; i++ )
 	{
 		int type = mcurv->geoms[i]->type;
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		switch (type)
 		{
 		case LINETYPE:
@@ -435,7 +435,7 @@ static void lwmcurve_to_wkt_sb(const LWMCURVE *mcurv, stringbuffer_t *sb, int pr
 			lwerror("lwmcurve_to_wkt_sb: Unknown type received %d - %s", type, lwtype_name(type));
 		}
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 
@@ -458,13 +458,13 @@ static void lwmsurface_to_wkt_sb(const LWMSURFACE *msurf, stringbuffer_t *sb, in
 		empty_to_wkt_sb(sb);
 		return;
 	}
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 	for ( i = 0; i < msurf->ngeoms; i++ )
 	{
 		int type = msurf->geoms[i]->type;
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		switch (type)
 		{
 		case POLYGONTYPE:
@@ -479,7 +479,7 @@ static void lwmsurface_to_wkt_sb(const LWMSURFACE *msurf, stringbuffer_t *sb, in
 			lwerror("lwmsurface_to_wkt_sb: Unknown type received %d - %s", type, lwtype_name(type));
 		}
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -501,15 +501,15 @@ static void lwcollection_to_wkt_sb(const LWCOLLECTION *collection, stringbuffer_
 		empty_to_wkt_sb(sb);
 		return;
 	}
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are children */
 	for ( i = 0; i < collection->ngeoms; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		lwgeom_to_wkt_sb((LWGEOM*)collection->geoms[i], sb, precision, variant );
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -528,9 +528,9 @@ static void lwtriangle_to_wkt_sb(const LWTRIANGLE *tri, stringbuffer_t *sb, int 
 		return;
 	}
 
-	stringbuffer_append_len(sb, "(", 1); /* Triangles have extraneous brackets */
+	stringbuffer_append_char(sb, '('); /* Triangles have extraneous brackets */
 	ptarray_to_wkt_sb(tri->points, sb, precision, variant);
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -551,15 +551,15 @@ static void lwtin_to_wkt_sb(const LWTIN *tin, stringbuffer_t *sb, int precision,
 		return;
 	}
 
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	for ( i = 0; i < tin->ngeoms; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		/* We don't want type strings on our subgeoms */
 		lwtriangle_to_wkt_sb(tin->geoms[i], sb, precision, variant | WKT_NO_TYPE );
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 /*
@@ -582,15 +582,15 @@ static void lwpsurface_to_wkt_sb(const LWPSURFACE *psurf, stringbuffer_t *sb, in
 
 	variant = variant | WKT_IS_CHILD; /* Inform the sub-geometries they are childre */
 
-	stringbuffer_append_len(sb, "(", 1);
+	stringbuffer_append_char(sb, '(');
 	for ( i = 0; i < psurf->ngeoms; i++ )
 	{
 		if ( i > 0 )
-			stringbuffer_append_len(sb, ",", 1);
+			stringbuffer_append_char(sb, ',');
 		/* We don't want type strings on our subgeoms */
 		lwpoly_to_wkt_sb(psurf->geoms[i], sb, precision, variant | WKT_NO_TYPE );
 	}
-	stringbuffer_append_len(sb, ")", 1);
+	stringbuffer_append_char(sb, ')');
 }
 
 

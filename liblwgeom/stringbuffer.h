@@ -102,6 +102,14 @@ stringbuffer_append_double(stringbuffer_t *s, double d, int precision)
 	s->str_end += lwprint_double(d, precision, s->str_end, OUT_DOUBLE_BUFFER_SIZE);
 }
 
+inline static void
+stringbuffer_append_char(stringbuffer_t *s, char c)
+{
+	stringbuffer_makeroom(s, 1);
+	*s->str_end = c;
+	s->str_end++;
+}
+
 /**
  * Append the specified string to the stringbuffer_t.
  */
