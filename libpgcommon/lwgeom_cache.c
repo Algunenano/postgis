@@ -77,6 +77,7 @@ GetGenericCacheCollection(FunctionCallInfo fcinfo)
 
 	if ( ! cache )
 	{
+		elog(NOTICE, "GetGenericCacheCollection not found");
 		cache = MemoryContextAlloc(FIContext(fcinfo), sizeof(GenericCacheCollection));
 		memset(cache, 0, sizeof(GenericCacheCollection));
 		fcinfo->flinfo->fn_extra = cache;
@@ -383,10 +384,8 @@ getSRSbySRID(FunctionCallInfo fcinfo, int32_t srid, bool short_crs)
 
 	size = strlen(srs) + 1;
 
-	MemoryContext old_context = MemoryContextSwitchTo(FIContext(fcinfo));
-	srscopy = palloc(size);
+	srscopy = MemoryContextAllocZero(FIContext(fcinfo), size);
 	memcpy(srscopy, srs, size);
-	MemoryContextSwitchTo(old_context);
 
 	/* disconnect from SPI */
 	SPI_finish();
@@ -402,6 +401,7 @@ SRSDescCacheGet(FunctionCallInfo fcinfo)
 	SRSDescCache *cache = (SRSDescCache *)(generic_cache->entry[entry_number]);
 	if (!cache)
 	{
+		elog(NOTICE, "generic_cache not found");
 		cache = MemoryContextAllocZero(FIContext(fcinfo), sizeof(SRSDescCache));
 		cache->type = entry_number;
 		generic_cache->entry[entry_number] = (GenericCache *)cache;
@@ -417,11 +417,22 @@ GetSRSCacheBySRID(FunctionCallInfo fcinfo, int32_t srid, bool short_crs)
 
 	if (arg->srid != srid || arg->short_mode != short_crs || !arg->srs)
 	{
+		elog(NOTICE,
+		     "Cache not found. Expected: %d %d. Found: %d %d %s",
+		     srid,
+		     short_crs,
+		     arg->srid,
+		     arg->short_mode,
+		     arg->srs ? arg->srs : "null");
 		arg->srid = srid;
 		arg->short_mode = short_crs;
 		if (arg->srs)
 			pfree(arg->srs);
 		arg->srs = getSRSbySRID(fcinfo, srid, short_crs);
+	}
+	else
+	{
+		elog(NOTICE, "Cache FOUND. Expected: %d %d", srid, short_crs);
 	}
 	return arg->srs;
 }
