@@ -208,7 +208,6 @@ Datum geography_as_gml(PG_FUNCTION_ARGS)
 	lwvarlena_t *v;
 	int version;
 	const char *srs;
-	int32_t srid = SRID_DEFAULT;
 	int precision = DBL_DIG;
 	int option = 0;
 	int lwopts = LW_GML_IS_DIMS;
@@ -284,9 +283,9 @@ Datum geography_as_gml(PG_FUNCTION_ARGS)
 	}
 
 	if (option & 1)
-		srs = GetSRSCacheBySRID(fcinfo, srid, false);
+		srs = GetSRSCacheBySRID(fcinfo, lwgeom->srid, false);
 	else
-		srs = GetSRSCacheBySRID(fcinfo, srid, true);
+		srs = GetSRSCacheBySRID(fcinfo, lwgeom->srid, true);
 	if (!srs)
 	{
 		elog(ERROR, "SRID %d unknown in spatial_ref_sys table", SRID_DEFAULT);

@@ -134,7 +134,6 @@ Datum LWGEOM_asGML(PG_FUNCTION_ARGS)
 	lwvarlena_t *v = NULL;
 	int version;
 	const char *srs;
-	int32_t srid;
 	int option = 0;
 	int lwopts = LW_GML_IS_DIMS;
 	int precision = DBL_DIG;
@@ -209,12 +208,13 @@ Datum LWGEOM_asGML(PG_FUNCTION_ARGS)
 		}
 	}
 
-	srid = gserialized_get_srid(geom);
-	if (srid == SRID_UNKNOWN)      srs = NULL;
+	lwgeom = lwgeom_from_gserialized(geom);
+	if (lwgeom->srid == SRID_UNKNOWN)
+		srs = NULL;
 	else if (option & 1)
-		srs = GetSRSCacheBySRID(fcinfo, srid, false);
+		srs = GetSRSCacheBySRID(fcinfo, lwgeom->srid, false);
 	else
-		srs = GetSRSCacheBySRID(fcinfo, srid, true);
+		srs = GetSRSCacheBySRID(fcinfo, lwgeom->srid, true);
 
 	if (option & 2) lwopts &= ~LW_GML_IS_DIMS;
 	if (option & 4) lwopts |= LW_GML_SHORTLINE;
@@ -229,7 +229,6 @@ Datum LWGEOM_asGML(PG_FUNCTION_ARGS)
 	if (option & 16) lwopts |= LW_GML_IS_DEGREE;
 	if (option & 32) lwopts |= LW_GML_EXTENT;
 
-	lwgeom = lwgeom_from_gserialized(geom);
 
 	if (version == 2)
 	{
