@@ -363,7 +363,7 @@ AddToPROJSRSCache(PROJPortalCache *PROJCache, int32_t srid_from, int32_t srid_to
 	if (!pjstrs_has_entry(&to_strs))
 		elog(ERROR, "got NULL for SRID (%d)", srid_to);
 
-	oldContext = MemoryContextSwitchTo(PROJCache->PROJSRSCacheContext);
+	oldContext = MemoryContextSwitchTo(PostgisCacheContext());
 
 #if POSTGIS_PROJ_VERSION < 60
 	PJ *projection = palloc(sizeof(PJ));
@@ -451,11 +451,10 @@ AddToPROJSRSCache(PROJPortalCache *PROJCache, int32_t srid_from, int32_t srid_to
 	pjstrs_pfree(&to_strs);
 
 	/* We register a new callback to delete the projection on exit */
-	MemoryContextCallback *callback =
-	    MemoryContextAlloc(PROJCache->PROJSRSCacheContext, sizeof(MemoryContextCallback));
+	MemoryContextCallback *callback = MemoryContextAlloc(PostgisCacheContext(), sizeof(MemoryContextCallback));
 	callback->func = PROJSRSDestroyPJ;
 	callback->arg = (void *)projection;
-	MemoryContextRegisterResetCallback(PROJCache->PROJSRSCacheContext, callback);
+	MemoryContextRegisterResetCallback(PostgisCacheContext(), callback);
 
 	PROJCache->PROJSRSCache[cache_position].srid_from = srid_from;
 	PROJCache->PROJSRSCache[cache_position].srid_to = srid_to;

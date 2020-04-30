@@ -31,6 +31,8 @@
 
 #define NUM_CACHE_ENTRIES 8
 
+/* Returns the MemoryContext used to store the caches */
+MemoryContext PostgisCacheContext(void);
 
 /*
 * A generic GeomCache just needs space for the cache type,
@@ -87,7 +89,6 @@ typedef struct struct_PROJPortalCache
 	int type;
 	PROJSRSCacheItem PROJSRSCache[PROJ_CACHE_ITEMS];
 	uint32_t PROJSRSCacheCount;
-	MemoryContext PROJSRSCacheContext;
 }
 PROJPortalCache;
 
