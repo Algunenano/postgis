@@ -32,7 +32,7 @@
 #define NUM_CACHE_ENTRIES 8
 
 /* Returns the MemoryContext used to store the caches */
-MemoryContext PostgisCacheContext(void);
+MemoryContext PostgisCacheContext(FunctionCallInfo fcinfo);
 
 /*
 * A generic GeomCache just needs space for the cache type,
