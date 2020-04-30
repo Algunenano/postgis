@@ -13,6 +13,7 @@
 #include "postgres.h"
 #include "executor/spi.h"
 #include "fmgr.h"
+#include "utils/memutils.h"
 
 #include "../postgis_config.h"
 
@@ -63,7 +64,7 @@ typedef struct {
 static MemoryContext
 FIContext(FunctionCallInfo fcinfo)
 {
-	return fcinfo->flinfo->fn_mcxt;
+	return CurTransactionContext;
 }
 
 /**
