@@ -521,22 +521,22 @@ static void encode_values(mvt_agg_context *ctx)
 	MVT_PARSE_INT_VALUE(value); \
 }
 
-static void add_value_as_string_with_size(mvt_agg_context *ctx,
-	char *value, size_t size, uint32_t *tags, uint32_t k)
+static void
+add_value_as_string_with_size(mvt_agg_context *ctx, char *value, size_t size, uint32_t *tags, uint32_t k)
 {
 	struct mvt_kv_string_value *kv;
 	POSTGIS_DEBUG(2, "add_value_as_string called");
-	HASH_FIND(hh, ctx->string_values_hash, value, size, kv);
+	unsigned hash;
+	HASH_VALUE(value, size, hash);
+	HASH_FIND_BYHASHVALUE(hh, ctx->string_values_hash, value, size, hash, kv);
 	if (!kv)
 	{
 		POSTGIS_DEBUG(4, "add_value_as_string value not found");
 		kv = palloc(sizeof(*kv));
-		POSTGIS_DEBUGF(4, "add_value_as_string new hash key: %d",
-			ctx->values_hash_i);
+		POSTGIS_DEBUGF(4, "add_value_as_string new hash key: %d", ctx->values_hash_i);
 		kv->id = ctx->values_hash_i++;
 		kv->string_value = value;
-		HASH_ADD_KEYPTR(hh, ctx->string_values_hash, kv->string_value,
-			size, kv);
+		HASH_ADD_KEYPTR_BYHASHVALUE(hh, ctx->string_values_hash, kv->string_value, size, hash, kv);
 	}
 	tags[ctx->row_columns*2] = k;
 	tags[ctx->row_columns*2+1] = kv->id;
