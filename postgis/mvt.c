@@ -70,7 +70,6 @@ struct mvt_kv_key
 
 struct mvt_kv_string_value
 {
-	char *string_value;
 	uint32_t id;
 	UT_hash_handle hh;
 };
@@ -436,7 +435,7 @@ static void encode_values(mvt_agg_context *ctx)
 	for (kv = ctx->string_values_hash; kv != NULL; kv=kv->hh.next)
 	{
 		VectorTile__Tile__Value *value = create_value();
-		value->string_value = kv->string_value;
+		value->string_value = kv->hh.key;
 		values[kv->id] = value;
 	}
 	MVT_CREATE_VALUES(mvt_kv_float_value,
@@ -535,8 +534,7 @@ add_value_as_string_with_size(mvt_agg_context *ctx, char *value, size_t size, ui
 		kv = palloc(sizeof(*kv));
 		POSTGIS_DEBUGF(4, "add_value_as_string new hash key: %d", ctx->values_hash_i);
 		kv->id = ctx->values_hash_i++;
-		kv->string_value = value;
-		HASH_ADD_KEYPTR_BYHASHVALUE(hh, ctx->string_values_hash, kv->string_value, size, hash, kv);
+		HASH_ADD_KEYPTR_BYHASHVALUE(hh, ctx->string_values_hash, value, size, hash, kv);
 	}
 	tags[ctx->row_columns*2] = k;
 	tags[ctx->row_columns*2+1] = kv->id;
