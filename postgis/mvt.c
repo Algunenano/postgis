@@ -1382,7 +1382,9 @@ mvt_ctx_delete(mvt_agg_context *ctx)
 
 bytea * mvt_ctx_serialize(mvt_agg_context *ctx)
 {
-	return mvt_ctx_to_bytea(ctx);
+	bytea *out = mvt_ctx_to_bytea(ctx);
+	mvt_ctx_delete(ctx);
+	return out;
 }
 
 static void * mvt_allocator(__attribute__((__unused__)) void *data, size_t size)
@@ -1592,7 +1594,9 @@ mvt_agg_context * mvt_ctx_combine(mvt_agg_context *ctx1, mvt_agg_context *ctx2)
  */
 bytea *mvt_agg_finalfn(mvt_agg_context *ctx)
 {
-	return mvt_ctx_to_bytea(ctx);
+	bytea *out = mvt_ctx_to_bytea(ctx);
+	mvt_ctx_delete(ctx);
+	return out;
 }
 
 
