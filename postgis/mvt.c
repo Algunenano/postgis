@@ -1271,7 +1271,7 @@ void mvt_agg_transfn(mvt_agg_context *ctx)
 
 	encode_geometry(ctx, lwgeom);
 	lwgeom_free(lwgeom);
-	// TODO: free detoasted datum?
+	POSTGIS_FREE_IF_COPY_P(gs, datum);
 	parse_values(ctx);
 }
 
