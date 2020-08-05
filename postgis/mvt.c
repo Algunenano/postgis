@@ -1280,7 +1280,7 @@ void mvt_agg_transfn(mvt_agg_context *ctx)
 	encode_geometry(ctx, lwgeom);
 	lwgeom_free(lwgeom);
 	POSTGIS_FREE_IF_COPY_P(gs, datum);
-	parse_values(ctx);
+	//	parse_values(ctx);
 }
 
 static VectorTile__Tile * mvt_ctx_to_tile(mvt_agg_context *ctx)
