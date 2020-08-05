@@ -1378,6 +1378,38 @@ mvt_ctx_delete(mvt_agg_context *ctx)
 		l->values = NULL;
 		lwfree(l);
 	}
+
+	if (ctx->keys_hash)
+	{
+		struct mvt_kv_key *kv;
+		for (kv = ctx->keys_hash; kv != NULL; kv = kv->hh.next)
+			pfree(kv->name);
+		HASH_CLEAR(hh, ctx->keys_hash);
+		ctx->keys_hash = NULL;
+	}
+
+	if (ctx->string_values_hash)
+	{
+		struct mvt_kv_string_value *kv;
+		for (kv = ctx->string_values_hash; kv != NULL; kv = kv->hh.next)
+			pfree(kv->hh.key);
+		ctx->keys_hash = NULL;
+	}
+
+	HASH_CLEAR(hh, ctx->string_values_hash);
+	int return_code;
+	JLFA(return_code, ctx->float_values_hash);
+	JLFA(return_code, ctx->double_values_hash);
+	JLFA(return_code, ctx->uint_values_hash);
+	JLFA(return_code, ctx->sint_values_hash);
+	JLFA(return_code, ctx->bool_values_hash);
+
+	ctx->string_values_hash = (Pvoid_t)NULL;
+	ctx->float_values_hash = (Pvoid_t)NULL;
+	ctx->double_values_hash = (Pvoid_t)NULL;
+	ctx->uint_values_hash = (Pvoid_t)NULL;
+	ctx->sint_values_hash = (Pvoid_t)NULL;
+	ctx->bool_values_hash = (Pvoid_t)NULL;
 }
 
 bytea * mvt_ctx_serialize(mvt_agg_context *ctx)
