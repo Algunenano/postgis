@@ -74,39 +74,13 @@ struct mvt_kv_string_value
 	UT_hash_handle hh;
 };
 
-struct mvt_kv_float_value
-{
-	float float_value;
-	uint32_t id;
-	UT_hash_handle hh;
-};
-
-struct mvt_kv_double_value
-{
-	double double_value;
-	uint32_t id;
-	UT_hash_handle hh;
-};
-
-struct mvt_kv_uint_value
-{
-	uint64_t uint_value;
-	uint32_t id;
-	UT_hash_handle hh;
-};
-
-struct mvt_kv_sint_value
-{
-	int64_t sint_value;
-	uint32_t id;
-	UT_hash_handle hh;
-};
-
-struct mvt_kv_bool_value
-{
-	protobuf_c_boolean bool_value;
-	uint32_t id;
-	UT_hash_handle hh;
+union value_types_union {
+	float fvalue;
+	double dvalue;
+	int64_t svalue;
+	protobuf_c_boolean bvalue;
+	uint64_t uvalue;
+	Word_t wvalue;
 };
 
 static inline uint32_t c_int(enum mvt_cmd_id id, uint32_t count)
@@ -409,20 +383,20 @@ static VectorTile__Tile__Value *create_value()
 	return value;
 }
 
-#define MVT_CREATE_VALUES(kvtype, hash, hasfield, valuefield) \
-{ \
-	POSTGIS_DEBUG(2, "MVT_CREATE_VALUES called"); \
+#define MVT_CREATE_VALUES(hash_table, pbf_has_field, pbf_value_field, union_type) \
 	{ \
-		struct kvtype *kv; \
-		for (kv = ctx->hash; kv != NULL; kv=kv->hh.next) \
+		Word_t index = 0; \
+		Word_t *pValue; \
+		JLF(pValue, hash_table, index); \
+		while (pValue != NULL) \
 		{ \
 			VectorTile__Tile__Value *value = create_value(); \
-			value->hasfield = 1; \
-			value->valuefield = kv->valuefield; \
-			values[kv->id] = value; \
+			value->pbf_has_field = 1; \
+			value->pbf_value_field = ((union value_types_union)index).union_type; \
+			values[*pValue] = value; \
+			JLN(pValue, hash_table, index); \
 		} \
-	} \
-}
+	}
 
 static void encode_values(mvt_agg_context *ctx)
 {
@@ -438,27 +412,24 @@ static void encode_values(mvt_agg_context *ctx)
 		value->string_value = kv->hh.key;
 		values[kv->id] = value;
 	}
-	MVT_CREATE_VALUES(mvt_kv_float_value,
-		float_values_hash, has_float_value, float_value);
-	MVT_CREATE_VALUES(mvt_kv_double_value,
-		double_values_hash, has_double_value, double_value);
-	MVT_CREATE_VALUES(mvt_kv_uint_value,
-		uint_values_hash, has_uint_value, uint_value);
-	MVT_CREATE_VALUES(mvt_kv_sint_value,
-		sint_values_hash, has_sint_value, sint_value);
-	MVT_CREATE_VALUES(mvt_kv_bool_value,
-		bool_values_hash, has_bool_value, bool_value);
+
+	MVT_CREATE_VALUES(ctx->float_values_hash, has_float_value, float_value, fvalue);
+	MVT_CREATE_VALUES(ctx->double_values_hash, has_double_value, double_value, dvalue);
+	MVT_CREATE_VALUES(ctx->uint_values_hash, has_uint_value, uint_value, uvalue);
+	MVT_CREATE_VALUES(ctx->sint_values_hash, has_sint_value, sint_value, svalue);
+	MVT_CREATE_VALUES(ctx->bool_values_hash, has_bool_value, bool_value, bvalue);
 
 	POSTGIS_DEBUGF(3, "encode_values n_values: %d", ctx->values_hash_i);
 	ctx->layer->n_values = ctx->values_hash_i;
 	ctx->layer->values = values;
 
 	HASH_CLEAR(hh, ctx->string_values_hash);
-	HASH_CLEAR(hh, ctx->float_values_hash);
-	HASH_CLEAR(hh, ctx->double_values_hash);
-	HASH_CLEAR(hh, ctx->uint_values_hash);
-	HASH_CLEAR(hh, ctx->sint_values_hash);
-	HASH_CLEAR(hh, ctx->bool_values_hash);
+	int return_code;
+	JLFA(return_code, ctx->float_values_hash);
+	JLFA(return_code, ctx->double_values_hash);
+	JLFA(return_code, ctx->uint_values_hash);
+	JLFA(return_code, ctx->sint_values_hash);
+	JLFA(return_code, ctx->bool_values_hash);
 
 	pfree(ctx->column_cache.column_keys_index);
 	pfree(ctx->column_cache.column_oid);
@@ -469,59 +440,31 @@ static void encode_values(mvt_agg_context *ctx)
 
 }
 
-#define MVT_PARSE_VALUE(value, kvtype, hash, valuefield, size) \
-{ \
-	POSTGIS_DEBUG(2, "MVT_PARSE_VALUE called"); \
-	{ \
-		struct kvtype *kv; \
-		HASH_FIND(hh, ctx->hash, &value, size, kv); \
-		if (!kv) \
-		{ \
-			POSTGIS_DEBUG(4, "MVT_PARSE_VALUE value not found"); \
-			kv = palloc(sizeof(*kv)); \
-			POSTGIS_DEBUGF(4, "MVT_PARSE_VALUE new hash key: %d", \
-				ctx->values_hash_i); \
-			kv->id = ctx->values_hash_i++; \
-			kv->valuefield = value; \
-			HASH_ADD(hh, ctx->hash, valuefield, size, kv); \
-		} \
-		tags[ctx->row_columns*2] = k; \
-		tags[ctx->row_columns*2+1] = kv->id; \
-	} \
+static uint64_t
+judy_vector_add_value(mvt_agg_context *ctx, PPvoid_t hash_table, union value_types_union value)
+{
+	Word_t index = value.wvalue;
+	Word_t *pValue;
+	JLG(pValue, *hash_table, index);
+	if (pValue == NULL)
+	{
+		JLI(pValue, *hash_table, index);
+		*pValue = ctx->values_hash_i++;
+	}
+	return *pValue;
 }
 
-#define MVT_PARSE_INT_VALUE(value) \
-{ \
-	if (value >= 0) \
-	{ \
-		uint64_t cvalue = value; \
-		MVT_PARSE_VALUE(cvalue, mvt_kv_uint_value, \
-				uint_values_hash, uint_value, \
-				sizeof(uint64_t)) \
-	} \
-	else \
-	{ \
-		int64_t cvalue = value; \
-		MVT_PARSE_VALUE(cvalue, mvt_kv_sint_value, \
-				sint_values_hash, sint_value, \
-				sizeof(int64_t)) \
-	} \
+static inline uint64_t
+judy_vector_add_int(mvt_agg_context *ctx, int64_t value)
+{
+	if (value >= 0)
+		return judy_vector_add_value(ctx, &ctx->uint_values_hash, (union value_types_union)(uint64_t)value);
+	else
+		return judy_vector_add_value(ctx, &ctx->sint_values_hash, (union value_types_union)value);
 }
 
-#define MVT_PARSE_DATUM(type, kvtype, hash, valuefield, datumfunc, size) \
-{ \
-	type value = datumfunc(datum); \
-	MVT_PARSE_VALUE(value, kvtype, hash, valuefield, size); \
-}
-
-#define MVT_PARSE_INT_DATUM(type, datumfunc) \
-{ \
-	type value = datumfunc(datum); \
-	MVT_PARSE_INT_VALUE(value); \
-}
-
-static void
-add_value_as_string_with_size(mvt_agg_context *ctx, char *value, size_t size, uint32_t *tags, uint32_t k)
+static uint64_t
+add_value_as_string_with_size(mvt_agg_context *ctx, char *value, size_t size)
 {
 	struct mvt_kv_string_value *kv;
 	POSTGIS_DEBUG(2, "add_value_as_string called");
@@ -536,18 +479,17 @@ add_value_as_string_with_size(mvt_agg_context *ctx, char *value, size_t size, ui
 		kv->id = ctx->values_hash_i++;
 		HASH_ADD_KEYPTR_BYHASHVALUE(hh, ctx->string_values_hash, value, size, hash, kv);
 	}
-	tags[ctx->row_columns*2] = k;
-	tags[ctx->row_columns*2+1] = kv->id;
+	return kv->id;
 }
 
-static void add_value_as_string(mvt_agg_context *ctx,
-	char *value, uint32_t *tags, uint32_t k)
+static uint64_t
+add_value_as_string(mvt_agg_context *ctx, char *value)
 {
-	return add_value_as_string_with_size(ctx, value, strlen(value), tags, k);
+	return add_value_as_string_with_size(ctx, value, strlen(value));
 }
 
-static void parse_datum_as_string(mvt_agg_context *ctx, Oid typoid,
-	Datum datum, uint32_t *tags, uint32_t k)
+static uint64_t
+parse_datum_as_string(mvt_agg_context *ctx, Oid typoid, Datum datum)
 {
 	Oid foutoid;
 	bool typisvarlena;
@@ -556,7 +498,7 @@ static void parse_datum_as_string(mvt_agg_context *ctx, Oid typoid,
 	getTypeOutputInfo(typoid, &foutoid, &typisvarlena);
 	value = OidOutputFunctionCall(foutoid, datum);
 	POSTGIS_DEBUGF(4, "parse_value_as_string value: %s", value);
-	add_value_as_string(ctx, value, tags, k);
+	return add_value_as_string(ctx, value);
 }
 
 static uint32_t *parse_jsonb(mvt_agg_context *ctx, Jsonb *jb,
@@ -566,7 +508,6 @@ static uint32_t *parse_jsonb(mvt_agg_context *ctx, Jsonb *jb,
 	JsonbValue v;
 	bool skipNested = false;
 	JsonbIteratorToken r;
-	uint32_t k;
 
 	if (!JB_ROOT_IS_OBJECT(jb))
 		return tags;
@@ -579,8 +520,8 @@ static uint32_t *parse_jsonb(mvt_agg_context *ctx, Jsonb *jb,
 
 		if (r == WJB_KEY && v.type != jbvNull)
 		{
-
-			k = get_key_index_with_size(ctx, v.val.string.val, v.val.string.len);
+			uint64_t id = UINT64_MAX;
+			uint32_t k = get_key_index_with_size(ctx, v.val.string.val, v.val.string.len);
 			if (k == UINT32_MAX)
 			{
 				char *key;
@@ -602,14 +543,13 @@ static uint32_t *parse_jsonb(mvt_agg_context *ctx, Jsonb *jb,
 				value = palloc(v.val.string.len + 1);
 				memcpy(value, v.val.string.val, v.val.string.len);
 				value[v.val.string.len] = '\0';
-				add_value_as_string(ctx, value, tags, k);
-				ctx->row_columns++;
+				id = add_value_as_string_with_size(ctx, value, v.val.string.len);
 			}
 			else if (v.type == jbvBool)
 			{
-				MVT_PARSE_VALUE(v.val.boolean, mvt_kv_bool_value,
-					bool_values_hash, bool_value, sizeof(protobuf_c_boolean));
-				ctx->row_columns++;
+				id = judy_vector_add_value(ctx,
+							   &ctx->bool_values_hash,
+							   (union value_types_union)(protobuf_c_boolean)v.val.boolean);
 			}
 			else if (v.type == jbvNumeric)
 			{
@@ -623,15 +563,17 @@ static uint32_t *parse_jsonb(mvt_agg_context *ctx, Jsonb *jb,
 
 				if (fabs(d - (double)l) > FLT_EPSILON)
 				{
-					MVT_PARSE_VALUE(d, mvt_kv_double_value, double_values_hash,
-						double_value, sizeof(double));
+					id = judy_vector_add_value(
+					    ctx, &ctx->double_values_hash, (union value_types_union)d);
 				}
 				else
 				{
-					MVT_PARSE_INT_VALUE(l);
+					id = judy_vector_add_int(ctx, l);
 				}
-				ctx->row_columns++;
 			}
+			tags[ctx->row_columns * 2] = k;
+			tags[ctx->row_columns * 2 + 1] = id;
+			ctx->row_columns++;
 		}
 	}
 
@@ -706,6 +648,7 @@ static void parse_values(mvt_agg_context *ctx)
 		char *key;
 		Oid typoid;
 		uint32_t k;
+		uint64_t id;
 		Datum datum = cc.values[i];
 
 		if (i == ctx->geom_index)
@@ -737,35 +680,44 @@ static void parse_values(mvt_agg_context *ctx)
 
 		switch (typoid)
 		{
-		case BOOLOID:
-			MVT_PARSE_DATUM(protobuf_c_boolean, mvt_kv_bool_value,
-				bool_values_hash, bool_value,
-				DatumGetBool, sizeof(protobuf_c_boolean));
-			break;
-		case INT2OID:
-			MVT_PARSE_INT_DATUM(int16_t, DatumGetInt16);
-			break;
-		case INT4OID:
-			MVT_PARSE_INT_DATUM(int32_t, DatumGetInt32);
-			break;
-		case INT8OID:
-			MVT_PARSE_INT_DATUM(int64_t, DatumGetInt64);
-			break;
-		case FLOAT4OID:
-			MVT_PARSE_DATUM(float, mvt_kv_float_value,
-				float_values_hash, float_value,
-				DatumGetFloat4, sizeof(float));
-			break;
-		case FLOAT8OID:
-			MVT_PARSE_DATUM(double, mvt_kv_double_value,
-				double_values_hash, double_value,
-				DatumGetFloat8, sizeof(double));
-			break;
-		default:
-			parse_datum_as_string(ctx, typoid, datum, tags, k);
+		case BOOLOID: {
+			protobuf_c_boolean b = DatumGetBool(datum);
+			id = judy_vector_add_value(ctx, &ctx->bool_values_hash, (union value_types_union)b);
 			break;
 		}
+		case INT2OID: {
+			int64_t i = (int64_t)DatumGetInt16(datum);
+			id = judy_vector_add_int(ctx, i);
+			break;
+		}
+		case INT4OID: {
+			int64_t i = (int64_t)DatumGetInt32(datum);
+			id = judy_vector_add_int(ctx, i);
+			break;
+		}
+		case INT8OID: {
+			int64_t i = (int64_t)DatumGetInt64(datum);
+			id = judy_vector_add_int(ctx, i);
+			break;
+		}
+		case FLOAT4OID: {
+			float f = DatumGetFloat4(datum);
+			id = judy_vector_add_value(ctx, &ctx->float_values_hash, (union value_types_union)f);
+			break;
+		}
+		case FLOAT8OID: {
+			double d = DatumGetFloat8(datum);
+			id = judy_vector_add_value(ctx, &ctx->double_values_hash, (union value_types_union)d);
+			break;
+		}
+		default: {
+			id = parse_datum_as_string(ctx, typoid, datum);
+			break;
+		}
+		}
 
+		tags[ctx->row_columns * 2] = k;
+		tags[ctx->row_columns * 2 + 1] = id;
 		ctx->row_columns++;
 	}
 
@@ -1240,13 +1192,13 @@ void mvt_agg_init_context(mvt_agg_context *ctx)
 
 	ctx->tile = NULL;
 	ctx->features_capacity = FEATURES_CAPACITY_INITIAL;
-	ctx->keys_hash = NULL;
-	ctx->string_values_hash = NULL;
-	ctx->float_values_hash = NULL;
-	ctx->double_values_hash = NULL;
-	ctx->uint_values_hash = NULL;
-	ctx->sint_values_hash = NULL;
-	ctx->bool_values_hash = NULL;
+	ctx->keys_hash = (Pvoid_t)NULL;
+	ctx->string_values_hash = (Pvoid_t)NULL;
+	ctx->float_values_hash = (Pvoid_t)NULL;
+	ctx->double_values_hash = (Pvoid_t)NULL;
+	ctx->uint_values_hash = (Pvoid_t)NULL;
+	ctx->sint_values_hash = (Pvoid_t)NULL;
+	ctx->bool_values_hash = (Pvoid_t)NULL;
 	ctx->values_hash_i = 0;
 	ctx->keys_hash_i = 0;
 	ctx->id_index = UINT32_MAX;

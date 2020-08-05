@@ -43,6 +43,15 @@
 
 #ifdef HAVE_LIBPROTOBUF
 
+/* Force word_t to be 64b in all platforms so there is enough space to store any value (double, float, uint64_t,
+ * uint32_t, boolean) */
+#ifndef _WORD_T
+#define _WORD_T
+typedef uint64_t Word_t, *PWord_t;
+#endif
+
+#include <Judy.h>
+
 #include "vector_tile.pb-c.h"
 
 typedef struct mvt_column_cache
@@ -67,13 +76,15 @@ typedef struct mvt_agg_context
 	VectorTile__Tile__Layer *layer;
 	VectorTile__Tile *tile;
 	size_t features_capacity;
+
 	struct mvt_kv_key *keys_hash;
 	struct mvt_kv_string_value *string_values_hash;
-	struct mvt_kv_float_value *float_values_hash;
-	struct mvt_kv_double_value *double_values_hash;
-	struct mvt_kv_uint_value *uint_values_hash;
-	struct mvt_kv_sint_value *sint_values_hash;
-	struct mvt_kv_bool_value *bool_values_hash;
+	Pvoid_t float_values_hash;
+	Pvoid_t double_values_hash;
+	Pvoid_t uint_values_hash;
+	Pvoid_t sint_values_hash;
+	Pvoid_t bool_values_hash;
+
 	uint32_t values_hash_i;
 	uint32_t keys_hash_i;
 	uint32_t row_columns;
