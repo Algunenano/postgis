@@ -138,9 +138,14 @@ Datum pgis_asmvt_transfn(PG_FUNCTION_ARGS)
 
 	if (PG_ARGISNULL(0)) {
 		ctx = palloc(sizeof(*ctx));
-		ctx->name = "default";
 		if (PG_NARGS() > 2 && !PG_ARGISNULL(2))
+		{
 			ctx->name = text_to_cstring(PG_GETARG_TEXT_P(2));
+		}
+		else
+		{
+			ctx->name = pstrdup("default");
+		}
 		ctx->extent = 4096;
 		if (PG_NARGS() > 3 && !PG_ARGISNULL(3))
 			ctx->extent = PG_GETARG_INT32(3);

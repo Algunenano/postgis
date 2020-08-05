@@ -374,6 +374,7 @@ static void encode_keys(mvt_agg_context *ctx)
 	ctx->layer->keys = keys;
 
 	HASH_CLEAR(hh, ctx->keys_hash);
+	ctx->keys_hash = NULL;
 }
 
 static VectorTile__Tile__Value *create_value()
@@ -430,6 +431,13 @@ static void encode_values(mvt_agg_context *ctx)
 	JLFA(return_code, ctx->uint_values_hash);
 	JLFA(return_code, ctx->sint_values_hash);
 	JLFA(return_code, ctx->bool_values_hash);
+
+	ctx->string_values_hash = (Pvoid_t)NULL;
+	ctx->float_values_hash = (Pvoid_t)NULL;
+	ctx->double_values_hash = (Pvoid_t)NULL;
+	ctx->uint_values_hash = (Pvoid_t)NULL;
+	ctx->sint_values_hash = (Pvoid_t)NULL;
+	ctx->bool_values_hash = (Pvoid_t)NULL;
 
 	pfree(ctx->column_cache.column_keys_index);
 	pfree(ctx->column_cache.column_oid);
@@ -1209,7 +1217,7 @@ void mvt_agg_init_context(mvt_agg_context *ctx)
 	layer = palloc(sizeof(*layer));
 	vector_tile__tile__layer__init(layer);
 	layer->version = 2;
-	layer->name = ctx->name;
+	layer->name = pstrdup(ctx->name);
 	layer->has_extent = 1;
 	layer->extent = ctx->extent;
 	layer->features = palloc (ctx->features_capacity *
@@ -1320,6 +1328,57 @@ static bytea *mvt_ctx_to_bytea(mvt_agg_context *ctx)
 	return ba;
 }
 
+static void
+mvt_ctx_delete(mvt_agg_context *ctx)
+{
+	if (ctx->name)
+		pfree(ctx->name);
+	ctx->name = NULL;
+
+	if (ctx->tile)
+		pfree(ctx->tile);
+	ctx->tile = NULL;
+
+	if (ctx->layer)
+	{
+		VectorTile__Tile__Layer *l = ctx->layer;
+		if (l->name)
+			lwfree(l->name);
+		l->name = NULL;
+
+		for (size_t i = 0; i < l->n_features; i++)
+		{
+			VectorTile__Tile__Feature *f = l->features[i];
+			if (f->tags)
+				lwfree(f->tags);
+			if (f->geometry)
+				lwfree(f->geometry);
+			lwfree(f);
+		}
+
+		if (l->keys)
+		{
+			for (size_t i = 0; i < l->n_keys; i++)
+				lwfree(l->keys[i]);
+			lwfree(l->keys);
+		}
+		l->keys = NULL;
+
+		if (l->values)
+		{
+			for (size_t i = 0; i < l->n_values; i++)
+			{
+				VectorTile__Tile__Value *v = l->values[i];
+				if (v->string_value)
+					lwfree(v->string_value);
+				lwfree(v);
+			}
+			lwfree(l->values);
+		}
+		l->values = NULL;
+		lwfree(l);
+	}
+}
 
 bytea * mvt_ctx_serialize(mvt_agg_context *ctx)
 {
@@ -1507,6 +1566,8 @@ mvt_agg_context * mvt_ctx_combine(mvt_agg_context *ctx1, mvt_agg_context *ctx2)
 			mvt_agg_context *ctxnew = palloc(sizeof(mvt_agg_context));
 			memset(ctxnew, 0, sizeof(mvt_agg_context));
 			ctxnew->tile = vectortile_tile_combine(ctx1->tile, ctx2->tile);
+			mvt_ctx_delete(ctx1);
+			mvt_ctx_delete(ctx2);
 			return ctxnew;
 		}
 		else
