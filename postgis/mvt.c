@@ -1605,6 +1605,10 @@ mvt_agg_context * mvt_ctx_combine(mvt_agg_context *ctx1, mvt_agg_context *ctx2)
 			mvt_agg_context *ctxnew = palloc(sizeof(mvt_agg_context));
 			memset(ctxnew, 0, sizeof(mvt_agg_context));
 			ctxnew->tile = vectortile_tile_combine(ctx1->tile, ctx2->tile);
+			if (ctxnew->tile == ctx1->tile)
+				ctx1->tile = NULL;
+			else if (ctxnew->tile == ctx2->tile)
+				ctx2->tile = NULL;
 			mvt_ctx_delete(ctx1);
 			mvt_ctx_delete(ctx2);
 			return ctxnew;
