@@ -165,7 +165,7 @@ Datum pgis_asmvt_transfn(PG_FUNCTION_ARGS)
 		elog(ERROR, "%s: parameter row cannot be other than a rowtype", __func__);
 	ctx->row = PG_GETARG_HEAPTUPLEHEADER(1);
 
-	mvt_agg_transfn(ctx);
+	//	mvt_agg_transfn(ctx);
 	PG_FREE_IF_COPY(ctx->row, 1);
 	PG_RETURN_POINTER(ctx);
 #endif

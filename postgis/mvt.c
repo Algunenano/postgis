@@ -439,11 +439,16 @@ static void encode_values(mvt_agg_context *ctx)
 	ctx->sint_values_hash = (Pvoid_t)NULL;
 	ctx->bool_values_hash = (Pvoid_t)NULL;
 
-	pfree(ctx->column_cache.column_keys_index);
-	pfree(ctx->column_cache.column_oid);
-	pfree(ctx->column_cache.values);
-	pfree(ctx->column_cache.nulls);
-	ReleaseTupleDesc(ctx->column_cache.tupdesc);
+	if (ctx->column_cache.column_keys_index)
+		pfree(ctx->column_cache.column_keys_index);
+	if (ctx->column_cache.column_oid)
+		pfree(ctx->column_cache.column_oid);
+	if (ctx->column_cache.values)
+		pfree(ctx->column_cache.values);
+	if (ctx->column_cache.nulls)
+		pfree(ctx->column_cache.nulls);
+	if (ctx->column_cache.tupdesc)
+		ReleaseTupleDesc(ctx->column_cache.tupdesc);
 	memset(&ctx->column_cache, 0, sizeof(ctx->column_cache));
 
 }
