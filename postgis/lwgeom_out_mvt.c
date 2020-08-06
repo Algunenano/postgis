@@ -183,7 +183,7 @@ Datum pgis_asmvt_finalfn(PG_FUNCTION_ARGS)
 #else
 	mvt_agg_context *ctx;
 	bytea *buf;
-	elog(DEBUG2, "%s called", __func__);
+	lwnotice("%s called", __func__);
 	if (!AggCheckCallContext(fcinfo, NULL))
 		elog(ERROR, "%s called in non-aggregate context", __func__);
 
@@ -208,7 +208,7 @@ Datum pgis_asmvt_serialfn(PG_FUNCTION_ARGS)
 	PG_RETURN_NULL();
 #else
 	mvt_agg_context *ctx;
-	elog(DEBUG2, "%s called", __func__);
+	lwnotice("%s called", __func__);
 	if (!AggCheckCallContext(fcinfo, NULL))
 		elog(ERROR, "%s called in non-aggregate context", __func__);
 
@@ -234,7 +234,7 @@ Datum pgis_asmvt_deserialfn(PG_FUNCTION_ARGS)
 #else
 	MemoryContext aggcontext, oldcontext;
 	mvt_agg_context *ctx;
-	elog(DEBUG2, "%s called", __func__);
+	lwnotice("%s called", __func__);
 	if (!AggCheckCallContext(fcinfo, &aggcontext))
 		elog(ERROR, "%s called in non-aggregate context", __func__);
 
@@ -255,7 +255,7 @@ Datum pgis_asmvt_combinefn(PG_FUNCTION_ARGS)
 #else
 	MemoryContext aggcontext, oldcontext;
 	mvt_agg_context *ctx, *ctx1, *ctx2;
-	elog(DEBUG2, "%s called", __func__);
+	lwnotice("%s called", __func__);
 	if (!AggCheckCallContext(fcinfo, &aggcontext))
 		elog(ERROR, "%s called in non-aggregate context", __func__);
 
