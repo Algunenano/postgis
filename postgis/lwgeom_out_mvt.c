@@ -234,13 +234,16 @@ Datum pgis_asmvt_deserialfn(PG_FUNCTION_ARGS)
 #else
 	MemoryContext aggcontext, oldcontext;
 	mvt_agg_context *ctx;
+	bytea *ba;
 	lwnotice("%s called", __func__);
 	if (!AggCheckCallContext(fcinfo, &aggcontext))
 		elog(ERROR, "%s called in non-aggregate context", __func__);
 
+	ba = PG_GETARG_BYTEA_P(0);
 	oldcontext = MemoryContextSwitchTo(aggcontext);
-	ctx = mvt_ctx_deserialize(PG_GETARG_BYTEA_P(0));
+	ctx = mvt_ctx_deserialize(ba);
 	MemoryContextSwitchTo(oldcontext);
+	PG_FREE_IF_COPY(ba, 0);
 
 	PG_RETURN_POINTER(ctx);
 #endif
