@@ -1327,6 +1327,7 @@ static bytea *mvt_ctx_to_bytea(mvt_agg_context *ctx)
 
 	/* Serialize the Tile */
 	len = VARHDRSZ + vector_tile__tile__get_packed_size(ctx->tile);
+	lwnotice("Generating bytea of %lu bytes", len);
 	ba = palloc(len);
 	vector_tile__tile__pack(ctx->tile, (uint8_t*)VARDATA(ba));
 	SET_VARSIZE(ba, len);
