@@ -1117,7 +1117,7 @@ Datum gserialized_gist_distance_2d(PG_FUNCTION_ARGS)
 		distance = box2df_distance(entry_box, &query_box);
 
 		if (GIST_LEAF(entry))
-			*recheck = true;
+			*recheck = false;
 	}
 	else
 	{
