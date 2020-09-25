@@ -705,9 +705,6 @@ Datum LWGEOM_longestline2d(PG_FUNCTION_ARGS)
 PG_FUNCTION_INFO_V1(ST_Distance);
 Datum ST_Distance(PG_FUNCTION_ARGS)
 {
-	MemoryContext test_ctx = AllocSetContextCreate(CurrentMemoryContext, "ST_Distance", ALLOCSET_DEFAULT_SIZES);
-	MemoryContext old_context = MemoryContextSwitchTo(test_ctx);
-
 	double mindist;
 	GSERIALIZED *geom1 = PG_GETARG_GSERIALIZED_P(0);
 	GSERIALIZED *geom2 = PG_GETARG_GSERIALIZED_P(1);
@@ -715,7 +712,13 @@ Datum ST_Distance(PG_FUNCTION_ARGS)
 	LWGEOM *lwgeom2 = lwgeom_from_gserialized(geom2);
 	gserialized_error_if_srid_mismatch(geom1, geom2, __func__);
 
+	MemoryContext test_ctx = AllocSetContextCreate(CurrentMemoryContext, "ST_Distance", ALLOCSET_DEFAULT_SIZES);
+	MemoryContext old_context = MemoryContextSwitchTo(test_ctx);
+
 	mindist = lwgeom_mindistance2d(lwgeom1, lwgeom2);
+
+	MemoryContextSwitchTo(old_context);
+	MemoryContextDelete(test_ctx);
 
 	lwgeom_free(lwgeom1);
 	lwgeom_free(lwgeom2);
@@ -723,8 +726,6 @@ Datum ST_Distance(PG_FUNCTION_ARGS)
 	PG_FREE_IF_COPY(geom1, 0);
 	PG_FREE_IF_COPY(geom2, 1);
 
-	MemoryContextSwitchTo(old_context);
-	MemoryContextDelete(test_ctx);
 
 	/* if called with empty geometries the ingoing mindistance is untouched, and makes us return NULL*/
 	if (mindist < FLT_MAX)
