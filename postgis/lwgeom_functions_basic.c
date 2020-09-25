@@ -717,15 +717,14 @@ Datum ST_Distance(PG_FUNCTION_ARGS)
 
 	mindist = lwgeom_mindistance2d(lwgeom1, lwgeom2);
 
-	MemoryContextSwitchTo(old_context);
-	MemoryContextDelete(test_ctx);
-
 	lwgeom_free(lwgeom1);
 	lwgeom_free(lwgeom2);
 
 	PG_FREE_IF_COPY(geom1, 0);
 	PG_FREE_IF_COPY(geom2, 1);
 
+	MemoryContextSwitchTo(old_context);
+	MemoryContextDelete(test_ctx);
 
 	/* if called with empty geometries the ingoing mindistance is untouched, and makes us return NULL*/
 	if (mindist < FLT_MAX)
