@@ -832,6 +832,8 @@ Datum LWGEOM_from_WKB(PG_FUNCTION_ARGS)
 	uint8_t *wkb = (uint8_t*)VARDATA(bytea_wkb);
 
 	lwgeom = lwgeom_from_wkb(wkb, VARSIZE(bytea_wkb)-VARHDRSZ, LW_PARSER_CHECK_ALL);
+	if (!lwgeom)
+		lwpgerror("Unable to parse WKB");
 
 	if ( lwgeom_needs_bbox(lwgeom) )
 		lwgeom_add_bbox(lwgeom);
