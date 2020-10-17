@@ -4,6 +4,7 @@ YYYY/MM/DD
   * Bug Fixes and Enhancements *
 
   - #4757, Handle line collapse due to snap-to-existing node (Sandro Santilli)
+  - #4767, #4768, #4771, #4772, Fix segfault when parsing invalid WKB (Raúl Marín)
 
 PostGIS 2.4.9
 2020/08/14
